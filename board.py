@@ -17,6 +17,30 @@ class Board:
         self.__hight = hight
         self.__total_length = width * hight
 
+        self.__board = None
+
+        self.__current_openning = None
+
+        self.__available_moves = {
+            "up": None,
+            "down": None,
+            "left": None,
+            "right": None
+        }
+
+        self.__set_random_board_values(width, hight, start_from_end)
+        self.__find_opening()
+        self.__update_available_moves()
+
+    def __find_opening(self):
+        for row in range(self.__hight):
+            for col in range(self.__width):
+                if self.__board[row][col] == 0:
+                    self.__current_openning = (row, col)
+                    break
+        assert self.__current_openning is not None, "Couldn't find the current_opening"
+
+    def __set_random_board_values(self, width, hight, start_from_end):
         flat_board = [i+1 for i in range(self.__width * self.__hight - 1)]+[0]
 
         if start_from_end:
@@ -28,28 +52,20 @@ class Board:
             
         self.__board = [flat_board[i:i+width] for i in range(0, self.__total_length, width)]
 
-        self.__current_openning = None
-        for row in range(self.__hight):
-            for col in range(self.__width):
-                if self.__board[row][col] == 0:
-                    self.__current_openning = (row, col)
-                    break
-        assert self.__current_openning is not None, "Couldn't find the current_opening"
-
-        self.__available_moves = {
-            "up": None,
-            "down": None,
-            "left": None,
-            "right": None
-        }
-        self.__update_available_moves()
-
     def __update_available_moves(self):
         row, col = self.__current_openning
         self.__available_moves["down"] = Move((row, col), (row - 1, col)) if row > 0 else None
         self.__available_moves["up"] = Move((row, col), (row + 1, col)) if row < self.__hight - 1 else None
         self.__available_moves["right"] = Move((row, col), (row, col - 1)) if col > 0 else None
         self.__available_moves["left"] = Move((row, col), (row, col + 1)) if col < self.__width - 1 else None 
+
+    def shuffle_board(self):
+        self.__init__(self.__width, self.__hight, start_from_end=False)
+        self.print_to_tkinter(self.__root_save, self.__screen_width_save, self.__screen_hight_save)
+
+    def play_end(self):
+        self.__init__(self.__width, self.__hight, start_from_end=True)
+        self.print_to_tkinter(self.__root_save, self.__screen_width_save, self.__screen_hight_save)
 
     def get_current_openning(self):
         return self.__current_openning
@@ -83,6 +99,14 @@ class Board:
 
     def print_to_tkinter(self, root, screen_width, screen_hight):
 
+        # Store the root window and screen dimensions for later use in rendering the board.
+        self.__root_save = root
+        self.__screen_width_save = screen_width
+        self.__screen_hight_save = screen_hight
+
+        cell_width = screen_width // (30 * len(self.__board[0]))
+        cell_height = screen_hight // (36 * len(self.__board))
+
         grid_frame = tk.Frame(root)
         grid_frame.place(relx=0, rely=0)
         
@@ -97,9 +121,16 @@ class Board:
                                                        value),
                                 borderwidth=1, 
                                 relief="solid", 
-                                height=screen_hight //(36*len(self.__board)), 
-                                width=screen_width //(30*len(self.__board[0])))
+                                height=cell_height, 
+                                width=cell_width)
                 cell.grid(row=r, column=c, padx=1, pady=1)
+
+        reset_button = tk.Button(root, text="Reset", command=self.shuffle_board)
+        grid_frame.update_idletasks()
+        reset_button.place(x=grid_frame.winfo_width(), rely=0.0)
+        play_end_button = tk.Button(root, text="Play End", command=self.play_end)
+        reset_button.update_idletasks()
+        play_end_button.place(x=grid_frame.winfo_width(), y=reset_button.winfo_height())
 
     def down(self):
         if self.__available_moves["down"] is not None:

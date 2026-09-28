@@ -4,7 +4,7 @@ from board import Board
 WIDTH=4
 HEIGHT=4
 
-board = Board(WIDTH, HEIGHT, start_from_end=True)
+board = Board(WIDTH, HEIGHT)
 
 def play_in_console():
 
