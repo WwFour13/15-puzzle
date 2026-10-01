@@ -52,12 +52,11 @@ def play_in_tkinter():
         elif key == "d":
             board.right()
         
-        board.print_to_tkinter(root, board_width=200, board_hight=200)
     
     root.bind("<Key>", handle_keypress)
     root.focus_set()
 
-    board.print_to_tkinter(root, board_width=200, board_hight=200)
+    board.tkinter_init(root, width=200, height=200)
     
     reset_button = tk.Button(root, text="Reset", command=board.shuffle_board)
     reset_button.place(x=board.get_total_pixel_width(), rely=0.0)

@@ -12,6 +12,7 @@ import tkinter as tk
 from PIL import Image, ImageDraw, ImageFont, ImageTk
 from move import Move
 from coloring import interpolate
+from functools import lru_cache
 
 class Board:
 
@@ -46,6 +47,40 @@ class Board:
         self.__find_opening()
         self.__update_available_moves()
 
+    def tkinter_init(self, root, width, height):
+
+        self.__on_tkinter = True
+        self.__root_save = root
+        self.__width_save = width
+        self.__height_save = height
+
+        self.__map_value_to_image = {i: self.__create_image(
+                        i, 
+                        interpolate(self.TKKINTER_LOW_COLOR, 
+                                    self.TKKINTER_HIGH_COLOR, 
+                                    self.__total_length, 
+                                    i), 
+                        width // self.__cols, 
+                        height // self.__rows) 
+                        for i in range(0, self.__total_length)
+                    }
+
+        
+        self.grid_frame = tk.Frame(root)
+        self.grid_frame.place(relx=0, rely=0)
+
+        self.cells = [[None for _ in range(self.__cols)] for _ in range(self.__rows)]
+
+        for r in range(self.__rows):
+            for c in range(self.__cols):
+                value = self.__board[r][c]
+                img = self.__map_value_to_image[value]
+                self.cells[r][c] = tk.Label(self.grid_frame,
+                                image=img,
+                                borderwidth=0, 
+                                relief="solid")
+                self.cells[r][c].grid(row=r, column=c)
+
     def __find_opening(self):
         for row in range(self.__rows):
             for col in range(self.__cols):
@@ -75,11 +110,11 @@ class Board:
 
     def shuffle_board(self):
         self.__init__(self.__cols, self.__rows, start_from_end=False)
-        self.print_to_tkinter(self.__root_save, self.__width_save, self.__hight_save)
+        self.update_tkinter(self.__root_save, self.__width_save, self.__height_save)
 
     def play_end(self):
         self.__init__(self.__cols, self.__rows, start_from_end=True)
-        self.print_to_tkinter(self.__root_save, self.__width_save, self.__hight_save)
+        self.update_tkinter(self.__root_save, self.__width_save, self.__height_save)
 
     def get_current_openning(self):
         return self.__current_openning
@@ -95,13 +130,13 @@ class Board:
         return self.__width_save
 
     def get_total_pixel_height(self):
-        return self.__hight_save
+        return self.__height_save
 
     """
 the cells change size based off text length (2 dugut vs 1 digit. make board method __get_image(text, color, width, height)
 makes the image so that tk.Label takes image not text
     """
-
+    @lru_cache(maxsize=None)
     def __create_image(self, value, color, width, height):
         text = str(value) if value != 0 else ""
         width = max(1, int(width))
@@ -133,6 +168,11 @@ makes the image so that tk.Label takes image not text
         self.__board[to_row][to_col] = 0
         self.__current_openning = (to_row, to_col)
         self.__update_available_moves()
+        try:
+            if self.__on_tkinter:
+                self.update_tkinter(self.__root_save, move)
+        except Exception as e:
+            print(f"Error updating tkinter: {e}")
 
     def print_to_console(self):
         for row in self.__board:
@@ -140,42 +180,23 @@ makes the image so that tk.Label takes image not text
                 print(f"{tile:2}", end=" ")
             print()
 
-    def print_to_tkinter(self, root, board_width, board_hight):
+    def update_tkinter(self, root=None, move: Move | None = None, *args, **kwargs):
+        if not getattr(self, "_Board__on_tkinter", False) or getattr(self, "cells", None) is None:
+            return
 
-        # Store the root window and screen dimensions for later use in rendering the board.
-        self.__root_save = root
-        self.__width_save = board_width
-        self.__hight_save = board_hight
 
-        cell_width = board_width // self.__cols
-        cell_height = board_hight // self.__rows
-
-        if not hasattr(self, "__images") or self.__images is None:
-            self.__images = {i: self.__create_image(
-                i, 
-                interpolate(self.TKKINTER_LOW_COLOR, 
-                            self.TKKINTER_HIGH_COLOR, 
-                            self.__total_length, 
-                            i), 
-                cell_width, 
-                cell_height) 
-                for i in range(0, self.__total_length)
-            }
-
-        grid_frame = tk.Frame(root)
-        grid_frame.place(relx=0, rely=0)
-
-        self.__cell_images = []
-        for r in range(self.__rows):
-            for c in range(self.__cols):
-                value = self.__board[r][c]
-                img = self.__images[value]
-                self.__cell_images.append(img)
-                cell = tk.Label(grid_frame,
-                                image=img,
-                                borderwidth=0, 
-                                relief="solid")
-                cell.grid(row=r, column=c)
+        if isinstance(move, Move):
+            from_row, from_col = move.from_
+            to_row, to_col = move.to
+            from_val = self.__board[from_row][from_col]
+            to_val = self.__board[to_row][to_col]
+            self.cells[from_row][from_col].configure(image=self.__map_value_to_image[from_val])
+            self.cells[to_row][to_col].configure(image=self.__map_value_to_image[to_val])
+        else:
+            for r in range(self.__rows):
+                for c in range(self.__cols):
+                    val = self.__board[r][c]
+                    self.cells[r][c].configure(image=self.__map_value_to_image[val])
 
 
     def down(self):
