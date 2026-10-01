@@ -51,12 +51,19 @@ def play_in_tkinter():
             board.left()
         elif key == "d":
             board.right()
-        board.print_to_tkinter(root, screen_width=SCREEN_WIDTH, screen_hight=SCREEN_HEIGHT)
+        
+        board.print_to_tkinter(root, board_width=200, board_hight=200)
     
     root.bind("<Key>", handle_keypress)
     root.focus_set()
 
-    board.print_to_tkinter(root, screen_width=SCREEN_WIDTH, screen_hight=SCREEN_HEIGHT)
+    board.print_to_tkinter(root, board_width=200, board_hight=200)
+    
+    reset_button = tk.Button(root, text="Reset", command=board.shuffle_board)
+    reset_button.place(x=board.get_total_pixel_width(), rely=0.0)
+    reset_button.update_idletasks()
+    play_end_button = tk.Button(root, text="Play End", command=board.play_end)
+    play_end_button.place(x=board.get_total_pixel_width(), y=reset_button.winfo_height())
 
     root.mainloop()
 
