@@ -1,5 +1,7 @@
 import tkinter as tk
 from board import Board
+from solver.lock_in_random_solver import LockInRandomSolver
+from solver.random_solver import RandomSolver
 
 WIDTH=4
 HEIGHT=4
@@ -33,6 +35,9 @@ def play_in_tkinter():
     SCREEN_WIDTH = (SCREEN_HEIGHT * 16) // 9
     root.geometry(f"{SCREEN_WIDTH}x{SCREEN_HEIGHT}")
 
+    lock_in_random_solver = LockInRandomSolver()
+    random_solver = RandomSolver()
+
     def handle_keypress(event):
         key = event.keysym
         if key == "Up":
@@ -51,6 +56,10 @@ def play_in_tkinter():
             board.left()
         elif key == "d":
             board.right()
+        elif key == "l":
+            lock_in_random_solver.make_move(board)
+        elif key == "r":
+            random_solver.make_move(board)
         
     
     root.bind("<Key>", handle_keypress)

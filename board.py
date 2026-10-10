@@ -110,11 +110,10 @@ class Board:
 
     def shuffle_board(self):
         self.__init__(self.__cols, self.__rows, start_from_end=False)
-        self.update_tkinter(self.__root_save, self.__width_save, self.__height_save)
-
+        self.update_tkinter(root=self.__root_save)
     def play_end(self):
         self.__init__(self.__cols, self.__rows, start_from_end=True)
-        self.update_tkinter(self.__root_save, self.__width_save, self.__height_save)
+        self.update_tkinter(root=self.__root_save)
 
     def get_current_openning(self):
         return self.__current_openning
@@ -132,8 +131,27 @@ class Board:
     def get_total_pixel_height(self):
         return self.__height_save
 
+    def get_rows(self):
+        return self.__rows
+
+    def get_cols(self):
+        return self.__cols
+
+    def is_correct_spot(self, row: int, col: int) -> bool:
+        return self.__board[row][col] == (row * self.__cols + col + 1) % (self.__rows * self.__cols)
+
+    def is_solved(self) -> bool:
+        for i in range(self.__rows):
+            for j in range(self.__cols):
+                if not self.is_correct_spot(i, j):
+                    return False
+        return True
+
+    def is_solvable(self) -> bool:
+        pass
+
     """
-the cells change size based off text length (2 dugut vs 1 digit. make board method __get_image(text, color, width, height)
+Prompt to make this method (Gemini Antigravity): the cells change size based off text length (2 dugut vs 1 digit. make board method __get_image(text, color, width, height)
 makes the image so that tk.Label takes image not text
     """
     @lru_cache(maxsize=None)
@@ -170,7 +188,7 @@ makes the image so that tk.Label takes image not text
         self.__update_available_moves()
         try:
             if self.__on_tkinter:
-                self.update_tkinter(self.__root_save, move)
+                self.update_tkinter(root=self.__root_save, move=move)
         except Exception as e:
             print(f"Error updating tkinter: {e}")
 
@@ -180,8 +198,8 @@ makes the image so that tk.Label takes image not text
                 print(f"{tile:2}", end=" ")
             print()
 
-    def update_tkinter(self, root=None, move: Move | None = None, *args, **kwargs):
-        if not getattr(self, "_Board__on_tkinter", False) or getattr(self, "cells", None) is None:
+    def update_tkinter(self, root=None, move: Move | None = None):
+        if getattr(self, "cells", None) is None:
             return
 
 
